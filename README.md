@@ -1,2 +1,2 @@
 # PrestaShopWebService
-PrestaShop WebService 
+Object Oriented PHP implementation for PrestaShop WebService API

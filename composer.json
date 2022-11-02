@@ -1,0 +1,43 @@
+{
+  "name": "prestaconnect/prestashopwebservice",
+  "description": "PrestaShop WebService",
+  "minimum-stability": "dev",
+  "license": "proprietary",
+  "authors": [
+    {
+      "name": "PrestaConnect",
+      "email": "contact@prestaconnect.net"
+    }
+  ],
+  "require": {
+    "php": "^7.1.3",
+    "ext-curl": "*",
+    "ext-libxml": "*",
+    "ext-simplexml": "*",
+    "ext-json": "*",
+    "ext-dom": "*",
+    "ext-fileinfo": "*",
+    "ext-intl": "*",
+    "prestashop/prestashop-webservice-lib": "dev-master",
+    "egulias/email-validator": "^2.1"
+  },
+  "require-dev": {
+  },
+  "autoload": {
+    "psr-4": {
+      "PrestaConnect\\": "src/"
+    }
+  },
+  "config": {
+    "platform": {
+      "php": "7.1.3"
+    },
+    "sort-packages": true,
+    "allow-plugins": {
+      "composer/package-versions-deprecated": true,
+      "composer/installers": true,
+      "ergebnis/composer-normalize": true
+    }
+  },
+  "prefer-stable": true
+}
