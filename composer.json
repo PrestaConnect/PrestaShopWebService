@@ -1,7 +1,7 @@
 {
   "name": "prestaconnect/prestashopwebservice",
   "description": "PrestaShop WebService",
-  "minimum-stability": "dev",
+  "minimum-stability": "stable",
   "license": "proprietary",
   "authors": [
     {
