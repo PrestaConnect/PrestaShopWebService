@@ -29,19 +29,108 @@ use PrestaConnect\Entities\Configuration;
 
 class Tools
 {
-    public static function strlen($str, $encoding = 'UTF-8')
+    /**
+     * Random password generator.
+     *
+     * @param int $length Desired length (optional)
+     * @param string $flag Output type (NUMERIC, ALPHANUMERIC, NO_NUMERIC, RANDOM)
+     *
+     * @return bool|string Password
+     */
+    public static function passwdGen($length = 8, $flag = 'ALPHANUMERIC')
     {
-        if (is_array($str)) {
+        $length = (int) $length;
+
+        if ($length <= 0) {
             return false;
         }
-        $str = html_entity_decode($str, ENT_COMPAT, 'UTF-8');
-        if (function_exists('mb_strlen')) {
-            return mb_strlen($str, $encoding);
+
+        switch ($flag) {
+            case 'NUMERIC':
+                $str = '0123456789';
+
+                break;
+            case 'NO_NUMERIC':
+                $str = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+                break;
+            case 'RANDOM':
+                $num_bytes = ceil($length * 0.75);
+                $bytes = Tools::getBytes($num_bytes);
+
+                return substr(rtrim(base64_encode($bytes), '='), 0, $length);
+            case 'ALPHANUMERIC':
+            default:
+                $str = 'abcdefghijkmnopqrstuvwxyz0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+
+                break;
         }
 
-        return strlen($str);
+        $bytes = Tools::getBytes($length);
+        $position = 0;
+        $result = '';
+
+        for ($i = 0; $i < $length; ++$i) {
+            $position = ($position + ord($bytes[$i])) % strlen($str);
+            $result .= $str[$position];
+        }
+
+        return $result;
     }
 
+    /**
+     * Random bytes generator.
+     *
+     * Limited to OpenSSL since 1.7.0.0
+     *
+     * @param int $length Desired length of random bytes
+     *
+     * @return bool|string Random bytes
+     */
+    public static function getBytes($length)
+    {
+        $length = (int) $length;
+
+        if ($length <= 0) {
+            return false;
+        }
+
+        $bytes = openssl_random_pseudo_bytes($length, $cryptoStrong);
+
+        if ($cryptoStrong === true) {
+            return $bytes;
+        }
+
+        return false;
+    }
+
+    /**
+     * Replace text within a portion of a string.
+     *
+     * Replaces a string matching a search, (optionally) string from a certain position
+     *
+     * @param string $search The string to search in the input string
+     * @param string $replace The replacement string
+     * @param string $subject The input string
+     * @param int $cur Starting position cursor for the search
+     *
+     * @return string the result string is returned
+     */
+    public static function strReplaceFirst($search, $replace, $subject, $cur = 0)
+    {
+        $strPos = strpos($subject, $search, $cur);
+
+        return $strPos !== false ? substr_replace($subject, $replace, (int) $strPos, strlen($search)) : $subject;
+    }
+
+    /**
+     * Return the friendly url from the provided string.
+     *
+     * @param string $str
+     * @param bool $utf8_decode (deprecated)
+     *
+     * @return string
+     */
     public static function link_rewrite($str)
     {
         return Tools::str2url($str);
@@ -216,6 +305,145 @@ class Tools
         return preg_replace($patterns, $replacements, $str);
     }
 
+    /**
+     * Truncate strings.
+     *
+     * @param string $str
+     * @param int $max_length Max length
+     * @param string $suffix Suffix optional
+     *
+     * @return string $str truncated
+     */
+    /* CAUTION : Use it only on module hookEvents.
+    ** For other purposes use the smarty function instead */
+    public static function truncate($str, $max_length, $suffix = '...')
+    {
+        if (Tools::strlen($str) <= $max_length) {
+            return $str;
+        }
+        $str = utf8_decode($str);
+
+        return utf8_encode(substr($str, 0, $max_length - Tools::strlen($suffix)) . $suffix);
+    }
+
+    /*Copied from CakePHP String utility file*/
+    public static function truncateString($text, $length = 120, $options = [])
+    {
+        $default = [
+            'ellipsis' => '...', 'exact' => true, 'html' => true,
+        ];
+
+        $options = array_merge($default, $options);
+        extract($options);
+        /**
+         * @var string
+         * @var bool $exact
+         * @var bool $html
+         */
+        if ($html) {
+            if (Tools::strlen(preg_replace('/<.*?>/', '', $text)) <= $length) {
+                return $text;
+            }
+
+            $total_length = Tools::strlen(strip_tags($ellipsis));
+            $open_tags = [];
+            $truncate = '';
+            preg_match_all('/(<\/?([\w+]+)[^>]*>)?([^<>]*)/', $text, $tags, PREG_SET_ORDER);
+
+            foreach ($tags as $tag) {
+                if (!preg_match('/img|br|input|hr|area|base|basefont|col|frame|isindex|link|meta|param/s', $tag[2])) {
+                    if (preg_match('/<[\w]+[^>]*>/s', $tag[0])) {
+                        array_unshift($open_tags, $tag[2]);
+                    } elseif (preg_match('/<\/([\w]+)[^>]*>/s', $tag[0], $close_tag)) {
+                        $pos = array_search($close_tag[1], $open_tags);
+                        if ($pos !== false) {
+                            array_splice($open_tags, $pos, 1);
+                        }
+                    }
+                }
+                $truncate .= $tag[1];
+                $content_length = Tools::strlen(preg_replace('/&[0-9a-z]{2,8};|&#[0-9]{1,7};|&#x[0-9a-f]{1,6};/i', ' ', $tag[3]));
+
+                if ($content_length + $total_length > $length) {
+                    $left = $length - $total_length;
+                    $entities_length = 0;
+
+                    if (preg_match_all('/&[0-9a-z]{2,8};|&#[0-9]{1,7};|&#x[0-9a-f]{1,6};/i', $tag[3], $entities, PREG_OFFSET_CAPTURE)) {
+                        foreach ($entities[0] as $entity) {
+                            if ($entity[1] + 1 - $entities_length <= $left) {
+                                --$left;
+                                $entities_length += Tools::strlen($entity[0]);
+                            } else {
+                                break;
+                            }
+                        }
+                    }
+
+                    $truncate .= Tools::substr($tag[3], 0, $left + $entities_length);
+
+                    break;
+                } else {
+                    $truncate .= $tag[3];
+                    $total_length += $content_length;
+                }
+
+                if ($total_length >= $length) {
+                    break;
+                }
+            }
+        } else {
+            if (Tools::strlen($text) <= $length) {
+                return $text;
+            }
+
+            $truncate = Tools::substr($text, 0, $length - Tools::strlen($ellipsis));
+        }
+
+        if (!$exact) {
+            $spacepos = Tools::strrpos($truncate, ' ');
+            if ($html) {
+                $truncate_check = Tools::substr($truncate, 0, $spacepos);
+                $last_open_tag = Tools::strrpos($truncate_check, '<');
+                $last_close_tag = Tools::strrpos($truncate_check, '>');
+
+                if ($last_open_tag > $last_close_tag) {
+                    preg_match_all('/<[\w]+[^>]*>/s', $truncate, $last_tag_matches);
+                    $last_tag = array_pop($last_tag_matches[0]);
+                    $spacepos = Tools::strrpos($truncate, $last_tag) + Tools::strlen($last_tag);
+                }
+
+                $bits = Tools::substr($truncate, $spacepos);
+                preg_match_all('/<\/([a-z]+)>/', $bits, $dropped_tags, PREG_SET_ORDER);
+
+                if (!empty($dropped_tags)) {
+                    if (!empty($open_tags)) {
+                        foreach ($dropped_tags as $closing_tag) {
+                            if (!in_array($closing_tag[1], $open_tags)) {
+                                array_unshift($open_tags, $closing_tag[1]);
+                            }
+                        }
+                    } else {
+                        foreach ($dropped_tags as $closing_tag) {
+                            $open_tags[] = $closing_tag[1];
+                        }
+                    }
+                }
+            }
+
+            $truncate = Tools::substr($truncate, 0, $spacepos);
+        }
+
+        $truncate .= $ellipsis;
+
+        if ($html) {
+            foreach ($open_tags as $tag) {
+                $truncate .= '</' . $tag . '>';
+            }
+        }
+
+        return $truncate;
+    }
+
     public static function strtolower($str)
     {
         if (is_array($str)) {
@@ -226,5 +454,137 @@ class Tools
         }
 
         return strtolower($str);
+    }
+
+    public static function strlen($str, $encoding = 'UTF-8')
+    {
+        if (is_array($str)) {
+            return false;
+        }
+        $str = html_entity_decode($str, ENT_COMPAT, 'UTF-8');
+        if (function_exists('mb_strlen')) {
+            return mb_strlen($str, $encoding);
+        }
+
+        return strlen($str);
+    }
+
+    public static function strtoupper($str)
+    {
+        if (is_array($str)) {
+            return false;
+        }
+        if (function_exists('mb_strtoupper')) {
+            return mb_strtoupper($str, 'utf-8');
+        }
+
+        return strtoupper($str);
+    }
+
+    public static function substr($str, $start, $length = false, $encoding = 'utf-8')
+    {
+        if (is_array($str)) {
+            return false;
+        }
+        if (function_exists('mb_substr')) {
+            return mb_substr($str, (int) $start, ($length === false ? Tools::strlen($str) : (int) $length), $encoding);
+        }
+
+        return substr($str, $start, ($length === false ? Tools::strlen($str) : (int) $length));
+    }
+
+    public static function strpos($str, $find, $offset = 0, $encoding = 'UTF-8')
+    {
+        if (function_exists('mb_strpos')) {
+            return mb_strpos($str, $find, $offset, $encoding);
+        }
+
+        return strpos($str, $find, $offset);
+    }
+
+    public static function strrpos($str, $find, $offset = 0, $encoding = 'utf-8')
+    {
+        if (function_exists('mb_strrpos')) {
+            return mb_strrpos($str, $find, $offset, $encoding);
+        }
+
+        return strrpos($str, $find, $offset);
+    }
+
+    public static function ucfirst($str)
+    {
+        return Tools::strtoupper(Tools::substr($str, 0, 1)) . Tools::substr($str, 1);
+    }
+
+    public static function ucwords($str)
+    {
+        if (function_exists('mb_convert_case')) {
+            return mb_convert_case($str, MB_CASE_TITLE);
+        }
+
+        return ucwords(Tools::strtolower($str));
+    }
+
+    /**
+     * Translates a string with underscores into camel case (e.g. first_name -> firstName).
+     *
+     * @prototype string public static function toCamelCase(string $str[, bool $capitalise_first_char = false])
+     *
+     * @param string $str Source string to convert in camel case
+     * @param bool $capitaliseFirstChar Optionnal parameters to transform the first letter in upper case
+     *
+     * @return string The string in camel case
+     */
+    public static function toCamelCase($str, $capitaliseFirstChar = false)
+    {
+        $str = Tools::strtolower($str);
+        $str = str_replace(' ', '', ucwords(str_replace(['-', '_'], ' ', $str)));
+        if (!$capitaliseFirstChar) {
+            $str = lcfirst($str);
+        }
+
+        return $str;
+    }
+
+    /**
+     * Transform a CamelCase string to underscore_case string.
+     *
+     * 'CMSCategories' => 'cms_categories'
+     * 'RangePrice' => 'range_price'
+     *
+     * @param string $string
+     *
+     * @return string
+     */
+    public static function toUnderscoreCase($string)
+    {
+        return Tools::strtolower(trim(preg_replace('/([A-Z][a-z])/', '_$1', $string), '_'));
+    }
+
+    /**
+     * Converts SomethingLikeThis to something-like-this
+     *
+     * @param string $string
+     *
+     * @return string
+     */
+    public static function camelCaseToKebabCase($string)
+    {
+        return Tools::strtolower(
+            preg_replace('/([a-z])([A-Z])/', '$1-$2', $string)
+        );
+    }
+
+    public static function str_replace_once($needle, $replace, $haystack)
+    {
+        $pos = false;
+        if ($needle) {
+            $pos = strpos($haystack, $needle);
+        }
+        if ($pos === false) {
+            return $haystack;
+        }
+
+        return substr_replace($haystack, $replace, $pos, strlen($needle));
     }
 }
