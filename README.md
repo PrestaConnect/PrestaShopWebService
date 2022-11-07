@@ -42,6 +42,7 @@ $ composer require prestaconnect/prestashopwebservice
 - PHP Extension `ext-dom`.
 - PHP Extension `ext-fileinfo`.
 - PHP Extension `ext-intl`.
+- PHP Extension `ext-openssl`.
 
 Bugs and feature request are tracked on [GitHub](https://github.com/PrestaConnect/PrestaShopWebService/issues)
 
