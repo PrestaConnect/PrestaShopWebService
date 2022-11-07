@@ -612,7 +612,7 @@ class Image extends WebServiceModel
      * @return bool
      * @throws \PrestaShopWebserviceException
      */
-    public function uploadImage($image_path, string $resource, $id_resource, $id_image = null, string $method = 'add')
+    private function uploadImage($image_path, string $resource, $id_resource, $id_image = null, string $method = 'add')
     {
         $image_path = realpath($image_path);
 
