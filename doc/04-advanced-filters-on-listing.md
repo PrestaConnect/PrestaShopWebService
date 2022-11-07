@@ -51,11 +51,32 @@ You can remove a where equal filter attached to the filter using the ```->filter
 ## The Where Like Filters
 > Methods: ```->filterAddBegin($field, $value)```, ```->filterRemoveBegin($field)```, ```->filterAddEnd($field, $value)```, ```->filterRemoveEnd($field)```, ```->filterAddContain($field, $value)```, ```->filterRemoveContain($field)```
 
+The ```->filterAddBegin($field, $value)``` filter works like the ```WHERE field LIKE 'value%'``` command in MySQL.<br />
+You can remove a where like begin filter attached to the filter using the ```->filterRemoveBegin($field)``` method.<br /><br/>
+
+The ```->filterAddEnd($field, $value)``` filter works like the ```WHERE field LIKE '%value'``` command in MySQL.<br />
+You can remove a where like end filter attached to the filter using the ```->filterRemoveEnd($field)``` method.<br /><br/>
+
+The ```->filterAddContain($field, $value)``` filter works like the ```WHERE field LIKE '%value%'``` command in MySQL.<br />
+You can remove a where like contain filter attached to the filter using the ```->filterRemoveContain($field)``` method.<br /><br/>
+
+
 ## The Numeric Comparison Filters
 > Methods: ```->filterAddGreater($field, $value)```, ```->filterRemoveGreater($field)```, ```->filterAddLower($field, $value)```, ```->filterRemoveLower($field)```, ```->filterAddBetween($field, $start, $end)```, ```->filterRemoveBetween($field)```
 
+The ```->filterAddGreater($field, $value)``` filter works like the ```WHERE field > 'value'``` command in MySQL.<br />
+You can remove a where greater than filter attached to the filter using the ```->filterRemoveGreater($field)``` method.<br /><br/>
+
+The ```->filterAddLower($field, $value)``` filter works like the ```WHERE field < 'value'``` command in MySQL.<br />
+You can remove a where lower than filter attached to the filter using the ```->filterRemoveLower($field)``` method.<br /><br/>
+
+The ```->filterAddBetween($field, $start, $end)``` filter works like the ```WHERE field BETWEEN 'start' AND 'end'``` command in MySQL.<br />
+You can remove a where between filter attached to the filter using the ```->filterRemoveBetween($field)``` method.<br /><br/>
 
 ## The Reset &amp; Unset Filters
 > Methods: ```->filterUnsetField($field)```, ```->resetFilters()```
+
+You can remove any filter field attached to the filter using the ```->filterUnsetField($field)``` method.<br /><br/>
+You can reset the all filters to ```->resetFilters()``` method.<br /><br/>
 
 &larr; [List Method](03-list-method.md) | [Add Method](05-add-method.md) &rarr;
