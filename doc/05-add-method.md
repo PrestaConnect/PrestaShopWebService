@@ -9,6 +9,7 @@ require_once dirname(__FILE__).'/vendor/autoloader.php';
 
 use \PrestaConnect\Entities\Configuration;
 use \PrestaConnect\Entities\Product;
+use \PrestaConnect\Entities\StockAvailable;
 use \PrestaConnect\Tools;
 
 try {
@@ -26,6 +27,7 @@ try {
     $p->weight = 0.012; // Kg
     $p->ean13 = '4525918051082';
     $p->is_virtual = 0; // Boolean Is virtual product
+    $p->state = 1; // 0 => temporary, 1 => saved
     $p->condition = 'new'; // new, used, refurbished
     $p->additional_delivery_times = 1; 0 = none, 1 = default, 2 = Custom Delivery Times (Shows delivery_in_stock and delivery_out_stock field values on product page)
     $p->delivery_in_stock = []; // If $p->additional_delivery_times = 2 set this
@@ -63,7 +65,34 @@ try {
     $p->available_now = [$id_lang => 'In Stock']; // Custom product in stock label, default empty array
     $p->available_later = [$id_lang => 'Pre-sale']; // Custom product in stock out of stock, default empty array
     
-    $p->add();
+    $p->associationSet('categories', ['id' => $p->id_category_default]); // Add category assosication
+    
+    $add = $p->add();
+    
+    if (Validate::isLoadedObject($add)) {
+        $id_stock_available = StockAvailable::getInstance()
+            ->filterAddEqual('id_product', (int) $add->id)
+            ->filterAddEqual('id_product_attribute', 0)
+            ->filterSetLimit(1)
+            ->list();
+
+        $id_stock_available = (int)$id_stock_available[0]['id'];
+        
+        $sa = new StockAvailable($id_stock_available);
+        
+        $sa->id_product = $add->id;
+        $sa->id_product_attribute = 0;
+        $sa->id_shop = Configuration::get('PS_SHOP_DEFAULT');
+        $sa->id_shop_group = 0;
+        $sa->quantity = 10; // Stock Quantity
+        $sa->depends_on_stock = 0; // @deprecated his property was only relevant to advanced stock management and that feature is not maintained anymore. Use Always 0 
+        $sa->out_of_stock = 2; // 0 = Deny orders, 1 = Allow orders, 2 = Use global setting
+        $sa->location = '';
+        
+        $sa->quantity = 10;
+        $sa->save();
+    }
+    
 } catch (\PrestaShopWebserviceException $e) {
     die($e->getMessage()); // Or do something
 }
