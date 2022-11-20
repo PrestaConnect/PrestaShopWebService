@@ -4,6 +4,7 @@
 - [Concept](#concept)
 - [Usage The PrestaShopWebService Library](#usage-the-prestashopwebservice-library)
 - [Basic Usage](#basic-usage)
+- [API Permissions](#api-permissions)
 - [API Class List](#api-class-list)
 - [Image Class](#image-class)
 - [Search Class](#search-class)
@@ -66,9 +67,61 @@ try {
 
 > ⚠ We recommend that you always perform the operations of this library inside the ```try {...} catch (\PrestaShopWebserviceException $e) {}``` code block.
 
+## Api Permissions
+Permissions are returned as key-value pairs and the value is boolean. If the value is true, it means there is permission, if the value is false, it means no permission.
+
+1) The ```GET``` permission allows executing an entity object's ```list``` method and ```__construct``` method.
+2) The ```PUT``` permission allows executing an entity object's ```update``` method.
+3) The ```POST``` permission allows executing an entity object's ```add``` method.
+4) The ```DELETE``` permission allows executing an entity object's ```delete``` method.
+5) The ```HEAD``` permission allows executing an entity object's ```exists``` method.
+
+```php
+<?php
+define('WEBSERVICE_URI', 'https://www.your-prestashop.com'); // Your PrestaShop main url
+define('WEBSERVICE_API_KEY', 'XR848EJWTNQYK6GEDZR2XIZFDT8RAGXD'); // Your WebService API Key
+
+require_once dirname(__FILE__).'/vendor/autoloader.php';
+
+use \PrestaConnect\Entities\Api;
+
+try {
+    var_dump(Api::getPermissions());
+    // returns array; api resource, resource permissions and entity namespace of resource
+    
+    /**
+    Typical permission response structure
+    [
+        'addresses' => [
+            'entity' => 'PrestaConnect\Entities\Address',
+            'permissions' => [
+                'GET' => true,
+                'PUT' => true,
+                'POST' => true,
+                'DELETE' => false,
+                'HEAD' => true
+            ]
+        ],
+        'attachments' => [
+            'entity' => 'PrestaConnect\Entities\Attachment',
+            'permissions' => [
+                'GET' => true,
+                'PUT' => false,
+                'POST' => false,
+                'DELETE' => true,
+                'HEAD' => true
+            ]
+        ]
+        ...
+    ]
+    **/
+} catch (\PrestaShopWebserviceException $e) {
+    die($e->getMessage()); // Or do something
+}
+```
 
 ## Api Class List
-
+> \PrestaConnect\Entities\Api<br />
 > \PrestaConnect\Entities\Address<br />
 > \PrestaConnect\Entities\Attachment<br />
 > \PrestaConnect\Entities\Attribute<br />
