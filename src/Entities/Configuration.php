@@ -102,7 +102,12 @@ class Configuration extends WebServiceModel
     {
         $id = static::getIdByName($key, $id_shop_group, $id_shop);
 
-        $instance = static::getInstance($id);
+        if ($id) {
+            $instance = static::getInstance($id);
+        } else {
+            $instance = static::getInstance();
+        }
+
         $instance->name = $key;
         $instance->value = $value;
         $instance->id_shop_group = $id_shop_group;
